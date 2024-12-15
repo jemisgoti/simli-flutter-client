@@ -22,7 +22,14 @@ class SimliClientConfig {
     this.silenceThreshold = const Duration(
       milliseconds: 1250,
     ),
+    this.iceGatheringTimeout = const Duration(seconds: 10),
     this.maxRetryAttempts = 3, // default value for maxRetryAttempts
+    this.webSocketTimeout =
+        const Duration(seconds: 20), // added webSocketTimeout
+    this.answerTimeoutTime = const Duration(seconds: 10),
+    this.videoReferenceUrl =
+        'https://storage.googleapis.com/charactervideos/5514e24d-6086-46a3-ace4-6a7264e5cb7c/5514e24d-6086-46a3-ace4-6a7264e5cb7c.mp4', // added videoReferenceUrl
+    this.isJPG = true, // added isJPG
   });
 
   /// Factory constructor for creating an instance from JSON if needed.
@@ -34,6 +41,9 @@ class SimliClientConfig {
       maxSessionLength: json['maxSessionLength'] as int,
       maxIdleTime: json['maxIdleTime'] as int,
       syncAudio: json['syncAudio'] as bool,
+      videoReferenceUrl:
+          json['videoReferenceUrl'] as String, // added videoReferenceUrl
+      isJPG: json['isJPG'] as bool? ?? true, // added isJPG
     );
   }
 
@@ -79,10 +89,29 @@ class SimliClientConfig {
   /// significant enough to take an action.
   final Duration silenceThreshold;
 
+  /// Duration for ICE gathering timeout.
+  /// Defines the maximum time to wait for ICE gathering
+  /// before declaring a failure.
+  final Duration iceGatheringTimeout;
+
   /// Max number of retry attempts for API requests.
   final int maxRetryAttempts;
 
-  ///converts the [SimliClientConfig] to a JSON map.
+  /// Duration for WebSocket timeout.
+  /// The time period to wait for WebSocket before timing out.
+  final Duration webSocketTimeout;
+
+  /// Duration for answer timeout.
+  /// The maximum time to wait for an answer before timing out.
+  final Duration answerTimeoutTime;
+
+  /// Video reference URL for the session.
+  final String videoReferenceUrl;
+
+  /// Indicates if the file format is JPG.
+  final bool isJPG;
+
+  /// Converts the [SimliClientConfig] to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'apiKey': apiKey,
@@ -91,6 +120,8 @@ class SimliClientConfig {
       'maxSessionLength': maxSessionLength,
       'maxIdleTime': maxIdleTime,
       'syncAudio': syncAudio,
+      'videoReferenceUrl': videoReferenceUrl, // added videoReferenceUrl
+      'isJPG': isJPG, // added isJPG
     };
   }
 }

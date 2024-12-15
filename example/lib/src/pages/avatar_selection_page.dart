@@ -8,7 +8,7 @@ import 'package:example/src/widgets/bg.dart';
 import 'package:example/src/widgets/simli_avatar_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gap/gap.dart'; 
+import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lottie/lottie.dart';
 

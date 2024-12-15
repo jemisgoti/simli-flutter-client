@@ -27,6 +27,8 @@ class SimliClient {
     videoRenderer = RTCVideoRenderer();
     videoRenderer!.initialize();
   }
+
+  /// Logger for the login of the data
   Logger log;
 
   /// client config for the session
@@ -81,6 +83,15 @@ class SimliClient {
     stateNotifier.value = state;
   }
 
+  /// Utility method to check connection status
+  bool get isConnected {
+    return sessionInitialized &&
+        webSocket != null &&
+        webSocket!.isConnected &&
+        peerConnection != null &&
+        state == SimliState.connected;
+  }
+
   /// Notifies listeners with audio level of the avatar.
   ValueNotifier<double> audioLevelNotifier = ValueNotifier(0);
 
@@ -97,10 +108,8 @@ class SimliClient {
   ///it will hold the reason for the error
   String? errorReason;
 
-  ///it will update client config
-  void updateConfig(SimliClientConfig clientConfig) {
-    this.clientConfig = clientConfig;
-  }
+  /// Gets the client configuration
+  SimliClientConfig get config => clientConfig;
 
   MediaStreamTrack? _audioStreamTack;
 
@@ -165,8 +174,10 @@ class SimliClient {
         requestTimeout: clientConfig.requestTimeout,
         retryDelay: clientConfig.retryDelay,
       ),
+      'iceTransportPolicy': 'all',
     };
 
+    logInfo(configuration);
     try {
       peerConnection = await createPeerConnection(configuration);
       logSuccess('Peer connection created');
@@ -174,7 +185,7 @@ class SimliClient {
       handleConnectionFailure('Failed to create peer connection: $e');
       return;
     }
-    logSuccess('Peer connection created');
+
     setupPeerConnectionListener();
   }
 
@@ -228,8 +239,8 @@ class SimliClient {
   void _setupConnectionStateHandler() {
     if (peerConnection == null) return;
 
-    peerConnection!.onConnectionState = (_) {
-      switch (peerConnection!.connectionState!) {
+    peerConnection!.onConnectionState = (connectionState) {
+      switch (connectionState) {
         case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
           clearTimeouts();
         case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
@@ -294,62 +305,51 @@ class SimliClient {
   ///
   /// This method sends a POST request to the Simli API to start an
   /// audio-to-video session. Upon success, it sends the session token over
-  ///  the data channel.
-  ///
-  /// The metadata includes the reference video URL, face ID, API key, and other
-  ///  parameters. Throws an exception if the session cannot be initialized.
+  /// the data channel.
   Future<void> initializeSession() async {
-    // Metadata to send to the API for session initialization.
+    const apiUrl = 'https://api.simli.ai/startAudioToVideoSession';
+
+    // Combine metadata with client configuration.
     final metadata = <String, dynamic>{
-      'video_reference_url':
-          'https://storage.googleapis.com/charactervideos/5514e24d-6086-46a3-ace4-6a7264e5cb7c/5514e24d-6086-46a3-ace4-6a7264e5cb7c.mp4',
-      'isJPG': false,
-    }..addAll(clientConfig.toJson());
+      'video_reference_url': clientConfig.videoReferenceUrl,
+      'isJPG': clientConfig.isJPG,
+      ...clientConfig.toJson(),
+    };
 
     try {
-      // Send a POST request to the server with the metadata.
+      // Make API request.
       final response = await http.post(
-        Uri.parse('https://api.simli.ai/startAudioToVideoSession'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-        },
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(metadata),
       );
 
-      // Check if the request was successful.
-      if (response.statusCode == 200) {
-        // Retrieve the session token from the response.
-        final sessionToken =
-            (jsonDecode(response.body) as Map)['session_token'].toString();
+      if (response.statusCode != 200) {
+        _handleApiFailure(response);
+        return;
+      }
 
-        if (webSocket != null && webSocket!.isConnected) {
-          // Send the session token over the data channel.
-          webSocket?.send(sessionToken);
-          logSuccess('Token is sent');
-        } else {
-          onFailed?.call(
-            SimliError(
-              message:
-                  'Data channel not open when trying to send session token',
-            ),
-          );
-          state = SimliState.failed;
-        }
+      // Extract and send the session token.
+      final sessionToken =
+          (jsonDecode(response.body) as Map)['session_token'].toString();
 
-        logInfo('Session initialized successfully');
+      if (webSocket?.isConnected ?? false) {
+        webSocket?.send(sessionToken);
+        logSuccess('Session token sent successfully.');
+        logInfo('Session initialized successfully.');
       } else {
-        // Log an error if the request fails.
-        logException('Failed to start session: ${response.statusCode}');
-        logException('Response body: ${response.body}');
-        handleConnectionFailure(
-          'Failed to start session: ${response.statusCode}',
-        );
-        await peerConnection?.close();
+        handleConnectionFailure('Data channel not open to send session token.');
       }
     } catch (error) {
-      handleConnectionFailure('Session initialization failed: $error');
-      await peerConnection?.close();
+      handleConnectionFailure('Failed to initialize session: $error');
     }
+  }
+
+  /// Handles API request failures.
+  void _handleApiFailure(http.Response response) {
+    logException('Failed to start session: ${response.statusCode}');
+    logException('Response body: ${response.body}');
+    handleConnectionFailure('Failed to start session: ${response.statusCode}');
   }
 
   /// Negotiates a WebRTC connection by creating an offer, setting the local
@@ -365,7 +365,10 @@ class SimliClient {
 
     try {
       // Create an offer for the peer connection.
-      final description = await peerConnection?.createOffer();
+      final description = await peerConnection?.createOffer({
+        'offerToReceiveAudio': true,
+        'offerToReceiveVideo': true,
+      });
       await peerConnection?.setLocalDescription(description!);
 
       // Wait for ICE gathering to complete before proceeding.
@@ -379,7 +382,7 @@ class SimliClient {
 
       webSocket = WebSocket(
         Uri.parse('wss://api.simli.ai/StartWebRTCSession'),
-        timeout: const Duration(seconds: 20),
+        timeout: clientConfig.webSocketTimeout,
       );
       RTCSessionDescription? answer;
       // Listen to messages
@@ -398,10 +401,11 @@ class SimliClient {
             await close();
           } else if (data.toString().startsWith('pong')) {
             // final pingKey = (data as String).replaceFirst('pong', 'ping');
-            // final pingTime = pingSendTimes[pingKey];
+            // final pT = pingSendTimes[pingKey];
+            // final difference = DateTime.now().millisecondsSinceEpoch - pT;
             // if (pingTime != null) {
             //   logInfo(
-            //'Simli Latency: ${DateTime.now().millisecondsSinceEpoch - pingTime}',
+            //'Simli Latency: $difference',
             //   );
             // }
           } else if (data == 'ACK') {
@@ -463,7 +467,7 @@ class SimliClient {
         }
       }
 
-      timeoutTimer = Timer(const Duration(seconds: 10), () {
+      timeoutTimer = Timer(clientConfig.answerTimeoutTime, () {
         if (!answerCompleter.isCompleted) {
           answerCompleter
               .completeError(TimeoutException('SIMLI: Answer timeout'));
@@ -485,41 +489,6 @@ class SimliClient {
   ///
   /// This method completes once the ICE candidates have been gathered.
 
-  // Future<void> waitForIceGathering() async {
-  //   if (peerConnection == null) return;
-
-  //   if (peerConnection!.iceGatheringState ==
-  //       RTCIceGatheringState.RTCIceGatheringStateComplete) {
-  //     return;
-  //   }
-  //   logInfo('Waiting For ICE Gathering');
-  //   final completer = Completer<void>();
-  //   Timer? timeout;
-
-  //   void checkIceCandidates() {
-  //     logInfo('Checking canddate');
-  //     if (peerConnection!.iceGatheringState ==
-  //             RTCIceGatheringState.RTCIceGatheringStateComplete ||
-  //         candidateCount == prevCandidateCount) {
-  //       timeout?.cancel();
-  //       completer.complete();
-  //     } else {
-  //       prevCandidateCount = candidateCount;
-  //       Future.delayed(const Duration(milliseconds: 250), checkIceCandidates);
-  //     }
-  //   }
-
-  //   timeout = Timer(const Duration(seconds: 10), () {
-  //     if (!completer.isCompleted) {
-  //       completer.completeError(Exception('ICE gathering timeout'));
-  //     }
-  //   });
-
-  //   checkIceCandidates();
-  //   logInfo('Checking candiate checking done');
-  //   return completer.future;
-  // }
-
   Future<void> waitForIceGathering() async {
     if (peerConnection?.iceGatheringState ==
         RTCIceGatheringState.RTCIceGatheringStateComplete) {
@@ -532,7 +501,7 @@ class SimliClient {
       }
     };
     await completer.future.timeout(
-      const Duration(seconds: 10),
+      clientConfig.iceGatheringTimeout,
       onTimeout: () {
         throw Exception('ICE gathering timeout');
       },
@@ -611,21 +580,22 @@ class SimliClient {
           webSocket!.send(audioData);
           logSuccess('Data Sent: ${audioData.length}');
           if (lastSendTime != 0) {
+            final diff = DateTime.now().millisecondsSinceEpoch - lastSendTime;
             logInfo(
-              'Time between sends: ${DateTime.now().millisecondsSinceEpoch - lastSendTime}',
+              'Time between sends: $diff',
             );
           }
           lastSendTime = DateTime.now().millisecondsSinceEpoch;
         } else {
           logInfo(
-            'Data channel open but session is being initialized. Ignoring audio data.',
+            '''WebSocket open but session is being initialized.Ignoring audio data. ''',
           );
         }
       } catch (error) {
         logException('Failed to send audio data: $error');
       }
     } else {
-      logException('Data channel is not open. Error Reason: $errorReason');
+      logException('WebSocket is not open. Error Reason: $errorReason');
     }
   }
 
@@ -638,7 +608,7 @@ class SimliClient {
     logSuccess(stream.getVideoTracks());
     // Set the source of the video renderer to the incoming media stream.
     videoRenderer?.srcObject = stream;
-    logSuccess('Video stream added');
+    logSuccess('Video stream added: active ${stream.active}');
     // Log when the first video frame is rendered.
     videoRenderer?.onFirstFrameRendered = () {
       logSuccess('First video frame rendered');
@@ -656,55 +626,10 @@ class SimliClient {
     }
   }
 
-  /// Closes the peer connection, data channels, and any active timers.
-  ///
-  /// This method ensures that all resources
-  /// (e.g., data channels, peer connection,timers are properly disposed
-  /// of when the client is no longer needed.
-  Future<void> close() async {
-    onDisconnected?.call();
-    webSocket?.close();
-    webSocket = null;
-    if (peerConnection?.transceivers != null) {
-      (await peerConnection?.getTransceivers())?.forEach(
-        (transceiver) {
-          transceiver.stop();
-        },
-      );
-    }
-
-    (await peerConnection?.senders)?.forEach((sender) {
-      sender.track?.stop();
-    });
-
-    await peerConnection?.close();
-    peerConnection = null;
-    _stopAudioLevelChecking();
-    videoRenderer?.dispose();
-  }
-
   void _startAudioLevelChecking() {
     if (_audioStreamTack == null) return;
     monitorAudioPlaying(peerConnection!, _audioStreamTack!);
     return;
-    audioLEvelTimer =
-        Timer.periodic(const Duration(milliseconds: 125), (Timer timer) async {
-      final stats = await peerConnection?.getStats(_audioStreamTack);
-      if (stats != null) {
-        for (final element in stats) {
-          if (element.type == 'inbound-rtp' &&
-              element.values['mediaType'].toString() == 'audio') {
-            final audioLevelValue = element.values['audioLevel'];
-
-            if (audioLevelValue != null) {
-              final audioLevel = double.parse(audioLevelValue.toString());
-              isSpeaking = audioLevel != 0;
-              audioLevelNotifier.value = audioLevel;
-            }
-          }
-        }
-      }
-    });
   }
 
   void _stopAudioLevelChecking() {
@@ -712,6 +637,7 @@ class SimliClient {
     audioLEvelTimer = null;
   }
 
+  ///it will monitor audio playing on audio track
   Future<void> monitorAudioPlaying(
     RTCPeerConnection connection,
     MediaStreamTrack audioTrack,
@@ -751,6 +677,60 @@ class SimliClient {
 
   ///it will clear the current audio buffer on server
   void clearBuffer() => webSocket?.send('SKIP');
+
+  /// Closes the peer connection, data channels, video renderer, and timers.
+  /// Ensures all resources are properly released.
+  Future<void> close() async {
+    if (state == SimliState.ideal) {
+      logInfo('Client already closed.');
+      return;
+    }
+
+    try {
+      logInfo('Closing client resources...');
+      _stopAudioLevelChecking();
+      // Notify disconnection
+      onDisconnected?.call();
+
+      // Close WebSocket connection
+      webSocket?.close();
+      webSocket = null;
+
+      // Close PeerConnection and its transceivers/senders
+      if (peerConnection != null) {
+        // Stop transceivers and senders
+        (await peerConnection?.getTransceivers())?.forEach((transceiver) {
+          transceiver.stop();
+        });
+        (await peerConnection?.senders)?.forEach((sender) {
+          sender.track?.stop();
+        });
+
+        await peerConnection?.close();
+        peerConnection = null;
+      }
+
+      // Stop audio monitoring and cleanup timers
+      _stopAudioLevelChecking();
+      clearTimeouts();
+
+      // Dispose video renderer
+      await videoRenderer?.dispose();
+      videoRenderer = null;
+
+      // Reset internal state
+      sessionInitialized = false;
+      isSpeaking = false;
+      candidateCount = 0;
+      prevCandidateCount = -1;
+      errorReason = null;
+
+      logInfo('Client closed successfully.');
+      state = SimliState.ideal;
+    } catch (e) {
+      logException('Error while closing resources: $e');
+    }
+  }
 
   ///it will log using info method
   void logSuccess(dynamic data) {

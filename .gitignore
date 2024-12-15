@@ -27,3 +27,5 @@ migrate_working_dir/
 **/doc/api/
 .dart_tool/
 build/
+simli_client_copy.dart
+simli_cleint.ts

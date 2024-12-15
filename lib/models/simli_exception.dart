@@ -15,6 +15,8 @@ class SimliException implements Exception {
       'SimliException(errorCode: $errorCode, message: $message)';
 }
 
+/// Defines a collection of exception codes used in the Simli application.
 class SimliExceptionCode {
-  static String noIceServes = "no-iceservers";
+  /// Code indicating that no ICE servers are available.
+  static String noIceServes = 'no-iceservers';
 }

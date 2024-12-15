@@ -50,13 +50,18 @@ class _ConversationsState extends State<Conversations> {
     simliClient = SimliClient(
         log: log,
         clientConfig: SimliClientConfig(
-          apiKey: ApiKeys.simliApiKey,
-          faceId: faceId,
-          handleSilence: true,
-          maxSessionLength: 3600,
-          maxIdleTime: 600,
-          syncAudio: true,
-        ));
+            apiKey: ApiKeys.simliApiKey,
+            faceId: faceId,
+            handleSilence: true,
+            maxSessionLength: 3600,
+            maxIdleTime: 60,
+            syncAudio: true,
+            audioCheckInterval: Duration(milliseconds: 125),
+            silenceThreshold: Duration(milliseconds: 200),
+            answerTimeoutTime: Duration(seconds: 20),
+            connectionTimeoutTime: Duration(seconds: 120),
+            iceGatheringTimeout: Duration(seconds: 60),
+            webSocketTimeout: Duration(seconds: 20)));
     audioQueue = AudioQueue(
       sampleRate: 16000,
       sendAudioData: (data) {
@@ -71,7 +76,7 @@ class _ConversationsState extends State<Conversations> {
 
     simliClient.onConnection = () {
       status.value = "initializing STT";
-      // onMicTap();
+      onMicTap();
     };
     simliClient.onFailed = (error) {
       showSnackBar(error.message);
@@ -277,7 +282,8 @@ class _ConversationsState extends State<Conversations> {
   }
 
   void showSnackBar(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(AppRouter.context ?? context)
+        .showSnackBar(SnackBar(content: Text(msg)));
   }
 }
 

@@ -28,3 +28,6 @@ the `lib/src/localization` directory.
 To support additional languages, please visit the tutorial on
 [Internationalizing Flutter
 apps](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+
+
+flutter build web --web-renderer canvaskit --dart-define-from-file=.env

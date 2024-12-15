@@ -6,7 +6,7 @@ import 'package:deepgram_speech_to_text/deepgram_speech_to_text.dart';
 import 'package:example/src/core/utils/api_keys.dart';
 import 'package:example/src/core/utils/logger.dart';
 import 'package:flutter/material.dart';
-import 'package:record/record.dart'; 
+import 'package:record/record.dart';
 
 import 'package:deepgram_sdk/deepgram_sdk.dart' as dpgs;
 

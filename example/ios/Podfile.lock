@@ -1,8 +1,8 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_webrtc (0.11.3):
+  - flutter_webrtc (0.11.8):
     - Flutter
-    - WebRTC-SDK (= 125.6422.04)
+    - WebRTC-SDK (= 125.6422.05)
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -10,13 +10,12 @@ PODS:
     - Flutter
   - record_darwin (1.0.0):
     - Flutter
-    - FlutterMacOS
-  - sqflite (0.0.3):
+  - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
   - url_launcher_ios (0.0.1):
     - Flutter
-  - WebRTC-SDK (125.6422.04)
+  - WebRTC-SDK (125.6422.05)
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -27,7 +26,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - pointer_interceptor_ios (from `.symlinks/plugins/pointer_interceptor_ios/ios`)
   - record_darwin (from `.symlinks/plugins/record_darwin/ios`)
-  - sqflite (from `.symlinks/plugins/sqflite/darwin`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
@@ -46,8 +45,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/pointer_interceptor_ios/ios"
   record_darwin:
     :path: ".symlinks/plugins/record_darwin/ios"
-  sqflite:
-    :path: ".symlinks/plugins/sqflite/darwin"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
   webview_flutter_wkwebview:
@@ -55,13 +54,13 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_webrtc: 75b868e4f9e817c7a9a42ca4b6169063de4eec9f
+  flutter_webrtc: 4f730f3d58a28b0afdea039c8bf4a0f616a6b20c
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   pointer_interceptor_ios: 508241697ff0947f853c061945a8b822463947c1
-  record_darwin: df0a677188e5fed18472550298e675f19ddaffbe
-  sqflite: 673a0e54cc04b7d6dba8d24fb8095b31c3a99eec
+  record_darwin: 3b1a8e7d5c0cbf45ad6165b4d83a6ca643d929c3
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  WebRTC-SDK: c3d69a87e7185fad3568f6f3cff7c9ac5890acf3
+  WebRTC-SDK: 1990a1a595bd0b59c17485ce13ff17f575732c12
   webview_flutter_wkwebview: 0982481e3d9c78fd5c6f62a002fcd24fc791f1e4
 
 PODFILE CHECKSUM: 65223395b444c1a9dfa14bd790b39e8737a354ac

@@ -1,65 +1,145 @@
-
 # Simli Client for Flutter
 
-The Simli Client Flutter package integrates with the Simli API to deliver real-time, low-latency streaming avatars. These avatars can be used in various applications, such as customer service bots, virtual assistants, and more. This package leverages WebRTC technology for video rendering, peer connections, and data channels, ensuring a seamless, high-performance experience.
+**Simli Client** is a Flutter package designed for seamless integration with the Simli API, offering real-time, low-latency streaming avatars. It leverages advanced **WebRTC** technology to manage video rendering, peer connections, and data channels, making it an ideal solution for applications like virtual assistants, customer service bots, and more.
 
-## Features
+---
 
-This package supports the following parameters and methods:
+## 🚀 Features
 
-### Parameters
+Simli Client provides a range of powerful features to simplify integration and improve performance:
 
-`SimliClient` supports the following parameters during initialization:
+- **Customizable Configurations:** Fine-tune session settings, timeouts, retry logic, and more using `SimliClientConfig`.
+- **Real-Time Audio and Video:** Supports synchronized audio streaming and live avatar rendering.
+- **Robust Connection Management:** Handles WebSocket timeouts, ICE gathering, and connection retries.
+- **Advanced Audio Handling:** Includes silence detection and customizable thresholds for action triggers.
+- **Effortless Integration:** Provides a simple API for session initialization and data streaming.
 
-| Name          | Type   | Description                                                    |
-| ------------- | ------ | -------------------------------------------------------------- |
-| apiKey        | String | The API key used for authenticating API requests.              |
-| faceId        | String | Identifies the face to use for the session.                    |
-| handleSilence | bool   | Optional. Determines whether silence handling is enabled.       |
+---
 
-Visit the Simli website to obtain your API key and face ID. [simli.com](https://www.simli.com/)
+## 🔄 Compatibility  
 
-## Getting Started
+The `SimliClient` Flutter package is fully compatible with **Simli Client version 1.2.1** from [npmjs.com](https://www.npmjs.com/package/simli-client). Ensure you are using version 1.2.1 or later for seamless integration and functionality.  
 
-### Installing
+---  
+## 📦 Parameters
 
-1. Add the dependency to `pubspec.yaml`.
+### `SimliClient` Parameters
 
-   Get the latest version from the 'Installing' tab
-   on [pub.dev](https://pub.dev/packages/simli_client/install).
+| **Parameter**  | **Type**            | **Description**                                  |
+| -------------- | ------------------- | ------------------------------------------------ |
+| `clientConfig` | `SimliClientConfig` | Configuration object for the client session.     |
+| `log`          | `Logger`            | Logger instance for debugging and event logging. |
+
+### `SimliClientConfig` Parameters
+
+| **Parameter**           | **Type**   | **Description**                                                   |
+| ----------------------- | ---------- | ----------------------------------------------------------------- |
+| `apiKey`                | `String`   | The API key used for authenticating API requests.                 |
+| `faceId`                | `String`   | Identifies the face avatar to use for the session.                |
+| `handleSilence`         | `bool`     | Enables or disables silence detection.                            |
+| `maxSessionLength`      | `int`      | The maximum allowable session length (in seconds).                |
+| `maxIdleTime`           | `int`      | The maximum idle time allowed before termination (in seconds).    |
+| `syncAudio`             | `bool`     | Enables audio synchronization.                                    |
+| `retryDelay`            | `Duration` | Specifies the delay before retrying failed operations.            |
+| `connectionTimeoutTime` | `Duration` | The maximum time allowed for establishing a connection.           |
+| `requestTimeout`        | `Duration` | The maximum time allowed for a request to complete.               |
+| `audioCheckInterval`    | `Duration` | The interval at which the audio status is checked.                |
+| `silenceThreshold`      | `Duration` | The duration of silence considered significant for action.        |
+| `iceGatheringTimeout`   | `Duration` | The maximum time allowed for ICE gathering.                       |
+| `maxRetryAttempts`      | `int`      | The maximum number of retry attempts for API requests.            |
+| `webSocketTimeout`      | `Duration` | The maximum time allowed for WebSocket operations before timeout. |
+| `answerTimeoutTime`     | `Duration` | The maximum time to wait for an answer before timing out.         |
+| `videoReferenceUrl`     | `String`   | The video reference URL used during the session.                  |
+| `isJPG`                 | `bool`     | Indicates whether the file format for assets is JPG.              |
+
+
+
+### `SimliClient` Members  
+
+The `SimliClient` class includes various properties and callbacks to manage the client's state, connection events, and audio-visual rendering effectively. Below is a list of available members:  
+
+| **Member**                | **Type**                     | **Description**                                                                                   |
+| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `videoRenderer`           | `RTCVideoRenderer?`          | The video renderer used for displaying video streams.                                            |
+| `stateNotifier`           | `ValueNotifier<SimliState>`  | Notifies listeners of changes to the client's state.                                             |
+| `isSpeakingNotifier`      | `ValueNotifier<bool>`        | Notifies listeners of changes in whether the user is speaking.                                   |
+| `onConnection`            | `VoidCallback?`              | A callback for handling connection events.                                                       |
+| `onFailed`                | `void Function(SimliError)`  | A callback for handling connection failed events.                                                |
+| `onDisconnected`          | `VoidCallback?`              | A callback for handling disconnection events.                                                    |
+| `isSpeaking`              | `bool`                      | Gets whether the user is currently speaking.                                                     |
+| `isSpeaking` *(setter)*   | `bool`                      | Sets whether the user is currently speaking.                                                     |
+| `state`                   | `SimliState`                | Gets the current state of the client.                                                            |
+| `isConnected`             | `bool`                      | Utility method to check connection status.                                                       |
+| `audioLevelNotifier`      | `ValueNotifier<double>`      | Notifies listeners with the audio level of the avatar.                                           |  
+
+---
+
+## 🛠️ Getting Started
+
+### Installation
+
+1. Add the dependency to your `pubspec.yaml`:
 
    ```yaml
    dependencies:
      simli_client: <latest-version>
    ```
 
-2. Run the following command:
+   Get the latest version from the [**Installing** tab on pub.dev](https://pub.dev/packages/simli_client/install).
 
-   ```shell
+2. Fetch the package using:
+
+   ```bash
    flutter pub get
    ```
 
-3. Import the package:
+3. Import the library into your project:
 
    ```dart
    import 'package:simli_client/simli_client.dart';
    ```
 
-## Implementation
+---
 
-1. Initialize the Simli client:
+## 🖥️ Implementation Guide
+
+1. **Configure the client:**
+
+   Create an instance of `SimliClientConfig` with the required parameters:
 
    ```dart
-   final SimliClient simliClient = SimliClient(apiKey: ApiKeys.simliApiKey, faceId: faceId);
+   final config = SimliClientConfig(
+     apiKey: '<YOUR_API_KEY>',
+     faceId: '<YOUR_FACE_ID>',
+     handleSilence: true,
+     maxSessionLength: 3600,
+     maxIdleTime: 300,
+     syncAudio: true,
+   );
    ```
 
-2. Call the `start` function to establish a connection with the server and create a peer connection:
+2. **Initialize the Simli Client:**
+
+   Pass the configuration and a logger to the `SimliClient` constructor:
+
+   ```dart
+   final SimliClient simliClient = SimliClient(
+     clientConfig: config,
+     log: Logger(),
+   );
+   ```
+
+3. **Start the client connection:**
+
+   Use the `start` method to establish the connection:
 
    ```dart
    simliClient.start();
    ```
 
-3. Use `RTCVideoView` in the widget tree to display the live avatar:
+4. **Render the live avatar:**
+
+   Use `RTCVideoView` to render the live avatar:
 
    ```dart
    RTCVideoView(
@@ -69,52 +149,70 @@ Visit the Simli website to obtain your API key and face ID. [simli.com](https://
    );
    ```
 
-4. Once the connection is established, you can send custom PCM16 audio with a 16,000 sample rate to the server. The avatar will start speaking using the provided audio. The audio data must be in `Uint8List` format:
+5. **Send audio data:**
+
+   Stream custom PCM16 audio in `Uint8List` format to trigger the avatar's response:
 
    ```dart
    simliClient.sendAudioData(data);
    ```
 
-### Additional Methods and Parameters
+---
 
-This package also includes additional methods and parameters to help you build a robust application:
+## 🔧 Advanced Configuration
 
-| Name               | Type                       | Description                                  |
-| ------------------ | -------------------------- | -------------------------------------------- |
-| state              | SimliState                 | Returns the current state of the client.     |
-| stateNotifier      | ValueNotifier<SimliState>  | Notifies about the SimliState.               |
-| onConnection       | VoidCallback               | Callback when the connection is established. |
-| onFailed           | Function(SimliError error) | Callback when the connection fails.          |
-| onDisconnected     | VoidCallback               | Callback when the connection is disconnected.|
-| isSpeaking         | bool                       | Returns `true` if the avatar is speaking.    |
-| isSpeakingNotifier | ValueNotifier<bool>        | Notifies about the speaking status.          |
-| audioLevelNotifier | ValueNotifier<double>      | Notifies about the audio level of the avatar.|
+The `SimliClientConfig` provides flexible options for fine-tuning your session:
 
-## Preview
+- **Timeouts and Delays:** Customize connection, request, retry, and WebSocket timeouts.
+- **Silence Handling:** Configure silence thresholds to define actionable durations.
+- **Video Reference:** Specify a video reference URL for preloading or fallback scenarios.
+- **Retry Logic:** Define retry intervals and the maximum number of attempts.
 
-### Here is the few screenshot for the preview.
+---
 
+## 🎨 Preview
+
+Check out the Simli Client in action:
 
 <table>
   <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/1.png" height="399" width="756" alt="Avatar Preview"/><br /><sub><b>Avatar</b></sub></td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/1.png" height="399" width="756" alt="Avatar Preview"/><br>
+      <b>Avatar Example</b>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/2.png" height="500px" alt="Conversation Preview"/><br /><sub><b>Conversation</b></sub></td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/2.png" height="500" alt="Conversation Preview"/><br>
+      <b>Interactive Conversation</b>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/1.gif" height="500px" alt="Demo Preview"/><br /><sub><b>Demo</b></sub></td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/jemisgoti/simli-flutter-client/master/preview/1.gif" height="500" alt="Demo Preview"/><br>
+      <b>Live Demo</b>
+    </td>
   </tr>
 </table>
 
-## Main Contributors
+---
+
+## 🤝 Contributors
 
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/jemisgoti"><img src="https://avatars.githubusercontent.com/u/46031164" width="100px;" height="100px;" alt="Jemis Goti"/><br /><sub><b>Jemis Goti</b></sub></a></td>
+    <td align="center">
+      <a href="https://github.com/jemisgoti">
+        <img src="https://avatars.githubusercontent.com/u/46031164" width="100px;" height="100px;" alt="Jemis Goti"/>
+        <br>
+        <b>Jemis Goti</b>
+      </a>
+    </td>
   </tr>
 </table>
 
-## Thanks
+---
 
-Thank you for using this package! Your support for the open-source community is greatly appreciated.
+## 🏆 Acknowledgements
+
+Thank you for choosing Simli Client! Your support empowers the open-source community to keep innovating. If you find this package helpful, consider starring the repository or contributing to its development.
