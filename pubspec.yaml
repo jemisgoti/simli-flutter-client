@@ -1,6 +1,6 @@
 name: simli_client
 description: Simli Client is a Flutter package for integrating with the Simli API, enabling live, low-latency avatars using WebRTC, ideal for virtual assistants and bots.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/jemisgoti/simli-flutter-client
 repository: https://github.com/jemisgoti/simli-flutter-client
 issue_tracker: https://github.com/jemisgoti/simli-flutter-client/issues

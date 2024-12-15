@@ -1,3 +1,4 @@
-## 1.0.0
+## 1.0.1
 
-* Initial version is added
+- Compatibility with version 1.2.1 added
+- Extra parameter added for the audioLevel Checking
